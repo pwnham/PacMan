@@ -52,7 +52,7 @@ public class PacPanel extends JPanel implements ActionListener {
 	}
 
 	public Image loadPacImage() throws IOException {
-		File pacImg = new File("C:/Users/Mohammad/git/PacMan/PacMan/resources/PacImage.png");
+		File pacImg = new File("resources/PacImage.png");
 		final BufferedImage pacImage = ImageIO.read(pacImg);
 		return pacImage;
 	}
