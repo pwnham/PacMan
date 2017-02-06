@@ -15,7 +15,7 @@ public class Driver {
 		frame.add(pacpanel, BorderLayout.CENTER);
 
 		frame.setVisible(true);
-		frame.setSize(700, 700);
+		frame.setSize(716, 739);
 	}
 
 }
