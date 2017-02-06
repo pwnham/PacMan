@@ -29,10 +29,14 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 	 * 1 - right 2 - left 3 - up 4 - down
 	 */
 	private int moveDirection = 0;
+	private int directionQueued = 0;
 	private int moveLookDirection = 0;
+
 	private int pacX = 300;
 	private int pacY = 300;
 	private int pacDiameter = 20;
+	private int pacWidth = 20;
+	private int pacHeight = 20;
 	private int pacDeltaX = 2;
 	private int pacDeltaY = 2;
 
@@ -70,25 +74,41 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 			}
 		}
 
-		if (pacX + pacDiameter <= 0) {
+		if (pacX + pacWidth <= 0) {
 			pacX = stageWidth;
 		} else if (pacX >= stageWidth) {
-			pacX = -pacDiameter;
+			pacX = -pacWidth;
+		}
+
+		if (directionQueued == 3 || directionQueued == 4) {
+			if (pacX % 20 == 0) {
+				moveDirection = directionQueued;
+				moveLookDirection = directionQueued;
+			}
+		} else if (directionQueued == 1 || directionQueued == 2) {
+			if (pacY % 20 == 0 || pacY == 302) {
+				moveDirection = directionQueued;
+				moveLookDirection = directionQueued;
+			}
 		}
 
 		if (hittingWall() && !throughDoor()) {
 			if (moveDirection == 1) {
 				pacX -= pacDeltaX;
 				moveDirection = 0;
+				directionQueued = 0;
 			} else if (moveDirection == 2) {
 				pacX += pacDeltaX;
 				moveDirection = 0;
+				directionQueued = 0;
 			} else if (moveDirection == 3) {
 				pacY += pacDeltaY;
 				moveDirection = 0;
+				directionQueued = 0;
 			} else if (moveDirection == 4) {
 				pacY -= pacDeltaY;
 				moveDirection = 0;
+				directionQueued = 0;
 			}
 		} else if (!hittingWall() || throughDoor()) {
 			if (moveDirection == 1) {
@@ -101,6 +121,7 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 				pacY += pacDeltaY;
 			}
 		}
+		System.out.println(moveDirection);
 
 		// if (!hittingWall()) {
 		// if (moveDirection == 1) {
@@ -161,6 +182,7 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 		// generate right side wall
 		for (int numOfWallsOnEdge = 0; numOfWallsOnEdge < gridSize; numOfWallsOnEdge++) {
 			walls.add(new Wall(stageWidth - wallLength, wallLength * numOfWallsOnEdge, wallLength));
+			System.out.println((stageWidth - wallLength));
 		}
 		// generate top wall
 		for (int numOfWallsOnEdge = 0; numOfWallsOnEdge < gridSize; numOfWallsOnEdge++) {
@@ -179,9 +201,8 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 	public boolean hittingWall() {
 		Wall[] wallsArray = walls.toArray(new Wall[walls.size()]);
 		for (int i = 0; i < wallsArray.length; i++) {
-			if (pacX + pacDiameter > wallsArray[i].getX()
-					&& pacX < wallsArray[i].getX() + wallsArray[i].getSideLength()) {
-				if (pacY + pacDiameter > wallsArray[i].getY()
+			if (pacX + pacWidth > wallsArray[i].getX() && pacX < wallsArray[i].getX() + wallsArray[i].getSideLength()) {
+				if (pacY + pacHeight > wallsArray[i].getY()
 						&& pacY < wallsArray[i].getY() + wallsArray[i].getSideLength()) {
 					return true;
 				}
@@ -191,8 +212,8 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 	}
 
 	public boolean throughDoor() {
-		if (pacY > 301 && pacY + pacDiameter < 301 + ((wallLength * 3) - 1)) {
-			if (pacX <= wallLength + 5 || pacX + pacDiameter >= stageWidth - wallLength - 5) {
+		if (pacY > 301 && pacY + pacHeight < 301 + ((wallLength * 3) - 1)) {
+			if (pacX <= wallLength + 5 || pacX + pacWidth >= stageWidth - wallLength - 5) {
 				return true;
 			}
 		}
@@ -200,6 +221,7 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 	}
 
 	public void paintComponent(Graphics g) {
+
 		super.paintComponent(g);
 
 		g.setColor(Color.green);
@@ -215,14 +237,19 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 
 		if (!isChomping) {
 			try {
-				g.drawImage(loadPacImage(), pacX, pacY, pacDiameter, pacDiameter, this);
+				if (pacY == 300) {
+					pacY += 2;
+					g.drawImage(loadPacImage(), pacX, pacY, pacWidth, pacHeight - 2, this);
+				} else {
+					g.drawImage(loadPacImage(), pacX, pacY, pacWidth, pacHeight, this);
+				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		} else if (isChomping) {
 			g.setColor(Color.YELLOW);
-			g.fillOval(pacX, pacY, pacDiameter, pacDiameter);
+			g.fillOval(pacX, pacY, pacWidth, pacHeight);
 		}
 	}
 
@@ -234,17 +261,21 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 		}
 
 		if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-			moveDirection = 1;
-			moveLookDirection = 1;
+			directionQueued = 1;
+			// moveDirection = 1;
+			// moveLookDirection = 1;
 		} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-			moveDirection = 2;
-			moveLookDirection = 2;
+			directionQueued = 2;
+			// moveDirection = 2;
+			// moveLookDirection = 2;
 		} else if (e.getKeyCode() == KeyEvent.VK_UP) {
-			moveDirection = 3;
-			moveLookDirection = 3;
+			directionQueued = 3;
+			// moveDirection = 3;
+			// moveLookDirection = 3;
 		} else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-			moveDirection = 4;
-			moveLookDirection = 4;
+			directionQueued = 4;
+			// moveDirection = 4;
+			// moveLookDirection = 4;
 		}
 	}
 
