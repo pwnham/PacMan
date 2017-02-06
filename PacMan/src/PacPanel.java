@@ -10,6 +10,7 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
@@ -20,6 +21,9 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 	private boolean isChomping = false;
 	private int timeSinceLastChomp = 0;
 
+	private int stageWidth = 700;
+	private int stageHeight = 700;
+	private int gridSize = 35;
 	/*
 	 * moveDirection is an int that represents PacMan's direction 0 - not moving
 	 * 1 - right 2 - left 3 - up 4 - down
@@ -31,6 +35,10 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 	private int pacDeltaX = 2;
 	private int pacDeltaY = 2;
 
+	private int wallLength = stageHeight / gridSize;
+
+	ArrayList<Wall> walls = new ArrayList<Wall>();
+
 	public PacPanel() throws IOException {
 		setBackground(Color.BLACK);
 
@@ -38,6 +46,7 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 		addKeyListener(this);
 
 		Image image = loadPacImage();
+		generateWalls();
 
 		Timer timer = new Timer(1000 / 100, this);
 		timer.start();
@@ -60,7 +69,7 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 			}
 		}
 
-		System.out.println(moveDirection);
+		// System.out.println(moveDirection);
 		if (moveDirection == 1) {
 			pacX += pacDeltaX;
 		} else if (moveDirection == 2) {
@@ -99,9 +108,25 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 		return pacImage;
 	}
 
+	public void generateWalls() {
+		for (int numOfWallsOnEdge = 0; numOfWallsOnEdge < gridSize; numOfWallsOnEdge++) {
+			walls.add(new Wall(stageWidth - wallLength, wallLength * numOfWallsOnEdge, wallLength));
+		}
+	}
+
+	// public boolean hittingWall() {
+	//
+	// }
+
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 
+		g.setColor(Color.green);
+		Wall[] wallsArray = walls.toArray(new Wall[walls.size()]);
+		for (int i = 0; i < wallsArray.length; i++) {
+			g.drawRect(wallsArray[i].getX(), wallsArray[i].getY(), wallsArray[i].getSideLength(),
+					wallsArray[i].getSideLength());
+		}
 		if (!isChomping) {
 			try {
 				g.drawImage(loadPacImage(), pacX, pacY, pacDiameter, pacDiameter, this);
