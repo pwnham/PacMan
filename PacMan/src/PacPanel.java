@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -41,8 +42,14 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 	private int pacDeltaY = 2;
 
 	private int wallLength = stageHeight / gridSize;
+	private int dotDiameter = 4;
+	private int dotXOffset = 8;
+	private int dotYOffset = 12;
+
+	private int pacScore = 0;
 
 	ArrayList<Wall> walls = new ArrayList<Wall>();
+	ArrayList<Dot> dots = new ArrayList<Dot>();
 
 	public PacPanel() throws IOException {
 		setBackground(Color.BLACK);
@@ -51,6 +58,7 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 		addKeyListener(this);
 
 		Image image = loadPacImage();
+		generateDots();
 		generateWalls();
 
 		Timer timer = new Timer(1000 / 100, this);
@@ -74,7 +82,6 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 			}
 		}
 
-		
 		if (pacX + pacWidth <= 0) {
 			pacX = stageWidth;
 		} else if (pacX >= stageWidth) {
@@ -87,7 +94,7 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 				moveLookDirection = directionQueued;
 			}
 		} else if (directionQueued == 1 || directionQueued == 2) {
-			if (pacY % 20 == 0 || pacY == 302) {
+			if (pacY % 20 == 0 || pacY == 302 || pacY == 338) {
 				moveDirection = directionQueued;
 				moveLookDirection = directionQueued;
 			}
@@ -122,7 +129,10 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 				pacY += pacDeltaY;
 			}
 		}
-		System.out.println(moveDirection);
+
+		hittingDot();
+		// System.out.println(pacY);
+		// System.out.println(moveDirection);
 
 		// if (!hittingWall()) {
 		// if (moveDirection == 1) {
@@ -197,18 +207,33 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 		for (int numOfWallsOnEdge = 0; numOfWallsOnEdge < gridSize; numOfWallsOnEdge++) {
 			walls.add(new Wall(wallLength * numOfWallsOnEdge, stageHeight - wallLength, wallLength));
 		}
-		//generate middle horizontal walls
+		// generate middle horizontal walls
 		for (int numOfWalls = 1; numOfWalls <= 9; numOfWalls++) {
 			walls.add(new Wall(wallLength * (numOfWalls + 12), wallLength * 12, wallLength));
 			walls.add(new Wall(wallLength * (numOfWalls + 12), wallLength * 20, wallLength));
 		}
-		//generate middle vertical walls
+		// generate middle vertical walls
 		for (int numOfWalls = 1; numOfWalls <= 2; numOfWalls++) {
 			walls.add(new Wall(wallLength * 13, wallLength * (12 + numOfWalls), wallLength));
 			walls.add(new Wall(wallLength * 21, wallLength * (12 + numOfWalls), wallLength));
 			walls.add(new Wall(wallLength * 13, wallLength * (17 + numOfWalls), wallLength));
 			walls.add(new Wall(wallLength * 21, wallLength * (17 + numOfWalls), wallLength));
 		}
+		// generate boundary walls at teleporter
+		walls.add(new Wall(wallLength * 35, wallLength * 14, wallLength));
+		walls.add(new Wall(wallLength * 35, wallLength * 18, wallLength));
+	}
+
+	public void generateDots() {
+		for (int dotX = 0; dotX < gridSize; dotX++) {
+			for (int dotY = 0; dotY < gridSize; dotY++) {
+				dots.add(new Dot((dotX * 20) + dotXOffset, (dotY * 20) + dotYOffset, dotDiameter));
+			}
+		}
+	}
+
+	public void eatDot() {
+
 	}
 
 	public boolean hittingWall() {
@@ -224,6 +249,20 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 		return false;
 	}
 
+	public void hittingDot() {
+		Dot[] dotsArray = dots.toArray(new Dot[dots.size()]);
+		for (int i = 0; i < dotsArray.length; i++) {
+			if (pacX + pacWidth > dotsArray[i].getX() && pacX < dotsArray[i].getX() + dotsArray[i].getDiameter()) {
+				if (pacY + pacHeight > dotsArray[i].getY() && pacY < dotsArray[i].getY() + dotsArray[i].getDiameter()) {
+					dots.remove(i);
+					pacScore++;
+					System.out.println("removed");
+				}
+
+			}
+		}
+	}
+
 	public boolean throughDoor() {
 		if (pacY > 301 && pacY + pacHeight < 301 + ((wallLength * 3) - 1)) {
 			if (pacX <= wallLength + 5 || pacX + pacWidth >= stageWidth - wallLength - 5) {
@@ -237,11 +276,21 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 
 		super.paintComponent(g);
 
-		g.setColor(Color.green);
+		g.setColor(Color.yellow);
+		Dot[] dotsArray = dots.toArray(new Dot[dots.size()]);
+		for (int i = 0; i < dotsArray.length; i++) {
+			g.fillOval(dotsArray[i].getX(), dotsArray[i].getY(), dotsArray[i].getDiameter(),
+					dotsArray[i].getDiameter());
+		}
+
 		Wall[] wallsArray = walls.toArray(new Wall[walls.size()]);
 		for (int i = 0; i < wallsArray.length; i++) {
-			g.drawRect(wallsArray[i].getX(), wallsArray[i].getY(), wallsArray[i].getSideLength(),
+			g.setColor(Color.blue);
+			g.fillRect(wallsArray[i].getX(), wallsArray[i].getY(), wallsArray[i].getSideLength(),
 					wallsArray[i].getSideLength());
+			g.setColor(Color.BLACK);
+			g.fillRect(wallsArray[i].getX() + 1, wallsArray[i].getY() + 1, wallsArray[i].getSideLength() - 2,
+					wallsArray[i].getSideLength() - 2);
 		}
 
 		g.setColor(Color.black);
@@ -254,7 +303,12 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 					pacY += 2;
 					g.drawImage(loadPacImage(), pacX, pacY, pacWidth, pacHeight - 2, this);
 				} else {
-					g.drawImage(loadPacImage(), pacX, pacY, pacWidth, pacHeight, this);
+					if (pacY == 340) {
+						pacY -= 2;
+						g.drawImage(loadPacImage(), pacX, pacY, pacWidth, pacHeight, this);
+					} else {
+						g.drawImage(loadPacImage(), pacX, pacY, pacWidth, pacHeight, this);
+					}
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -264,7 +318,15 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 			g.setColor(Color.YELLOW);
 			g.fillOval(pacX, pacY, pacWidth, pacHeight);
 		}
-		System.out.println(pacX);
+
+		g.setColor(Color.WHITE);
+		g.setFont(new Font(Font.DIALOG, Font.BOLD, 36));
+		if (pacScore > 999) {
+			g.drawString(String.valueOf(pacScore), (gridSize - 4) * 20, 3 * 20);
+		} else {
+			g.drawString(String.valueOf(pacScore), (gridSize - 3) * 20, 3 * 20);
+		}
+		// System.out.println(pacX);
 	}
 
 	@Override
@@ -275,23 +337,23 @@ public class PacPanel extends JPanel implements ActionListener, KeyListener {
 		}
 
 		if (!(pacX < 0) || !(pacX + pacWidth > stageWidth)) {
-		if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-			directionQueued = 1;
-			// moveDirection = 1;
-			// moveLookDirection = 1;
-		} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-			directionQueued = 2;
-			// moveDirection = 2;
-			// moveLookDirection = 2;
-		} else if (e.getKeyCode() == KeyEvent.VK_UP) {
-			directionQueued = 3;
-			// moveDirection = 3;
-			// moveLookDirection = 3;
-		} else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-			directionQueued = 4;
-			// moveDirection = 4;
-			// moveLookDirection = 4;
-		}
+			if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+				directionQueued = 1;
+				// moveDirection = 1;
+				// moveLookDirection = 1;
+			} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+				directionQueued = 2;
+				// moveDirection = 2;
+				// moveLookDirection = 2;
+			} else if (e.getKeyCode() == KeyEvent.VK_UP) {
+				directionQueued = 3;
+				// moveDirection = 3;
+				// moveLookDirection = 3;
+			} else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+				directionQueued = 4;
+				// moveDirection = 4;
+				// moveLookDirection = 4;
+			}
 		}
 	}
 
